@@ -5,13 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Program",
+   yes         "name": "Launch Program",
             "program": "${workspaceFolder}/app.js",
             "request": "launch",
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "node"
+            "type": "node",
+            "runtimeExecutable": "C:/Program Files/nodejs/node.exe"
         },
         {
             "name": "Launch Chrome",
@@ -27,7 +28,8 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "type": "node"
+            "type": "node",
+            "runtimeExecutable": "C:/Program Files/nodejs/node.exe"
         },
         {
             "name": "(gdb) Bash on Windows Attach",
