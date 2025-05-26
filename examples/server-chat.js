@@ -233,6 +233,6 @@ new Server({
   }).on('error', (err) => {
     // Ignore errors
   });
-}).listen(0, function() {
+}).listen(2222, function() {
   console.log('Listening on port ' + this.address().port);
 });
