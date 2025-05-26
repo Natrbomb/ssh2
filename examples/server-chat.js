@@ -7,6 +7,8 @@
 'use strict';
 
 const { readFileSync } = require('fs');
+const https = require('https');
+const http = require('http');
 
 const blessed = require('blessed');
 const { Server } = require('ssh2');
@@ -46,6 +48,37 @@ function localMessage(msg, source) {
 }
 
 function noop(v) {}
+
+async function callLlama2(prompt) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify({ prompt });
+    const options = {
+      hostname: 'localhost',
+      port: 8000,
+      path: '/infer',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': data.length
+      }
+    };
+    const req = http.request(options, (res) => {
+      let body = '';
+      res.on('data', (chunk) => { body += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(body);
+          resolve(json.response || body);
+        } catch (e) {
+          resolve(body);
+        }
+      });
+    });
+    req.on('error', (e) => { reject(e); });
+    req.write(data);
+    req.end();
+  });
+}
 
 new Server({
   hostKeys: [readFileSync('host.key')],
@@ -202,7 +235,7 @@ new Server({
         screen.program.emit('resize');
 
         // Read a line of input from the user
-        input.on('submit', (line) => {
+        input.on('submit', async (line) => {
           input.clearValue();
           screen.render();
           if (!input.focused)
@@ -211,10 +244,19 @@ new Server({
           if (line.length > MAX_MSG_LEN)
             line = line.substring(0, MAX_MSG_LEN);
           if (line.length > 0) {
-            if (line === '/quit' || line === '/exit')
+            if (line === '/quit' || line === '/exit') {
               stream.end();
-            else
+            } else if (line.startsWith('/ai ')) {
+              localMessage('{yellow-fg}Querying Llama2...{/}', stream);
+              try {
+                const aiResponse = await callLlama2(line.slice(4));
+                localMessage('{green-fg}Llama2: ' + aiResponse + '{/}', stream);
+              } catch (err) {
+                localMessage('{red-fg}Llama2 error: ' + err.message + '{/}', stream);
+              }
+            } else {
               userBroadcast(line, stream);
+            }
           }
         });
       });
